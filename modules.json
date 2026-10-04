@@ -22,5 +22,11 @@
     "name": "GST Processor & Consolidator",
     "repo": "vtx-gst-processor",
     "bundle": "gst_processor.vtx"
-  }
+  },
+  {
+  "id": "ocr_engine",
+  "name": "OCR Local Neural Engine",
+  "repo": "vtx-ocr-engine",
+  "bundle": "ocr_local_neural_engine_v1.0.0.vtx"
+}
 ]
