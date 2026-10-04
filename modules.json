@@ -1,0 +1,26 @@
+[
+  {
+    "id": "bank_statement_converter",
+    "name": "Bank Statement Converter",
+    "repo": "vtx-bank-statement-converter",
+    "bundle": "bank_statement_converter.vtx"
+  },
+  {
+    "id": "excel_consolidator",
+    "name": "Excel Consolidator",
+    "repo": "vtx-excel-consolidator",
+    "bundle": "excel_consolidator.vtx"
+  },
+  {
+    "id": "gst_portal_downloader",
+    "name": "GSTR Downloader",
+    "repo": "vtx-gstr-downloader",
+    "bundle": "gst_portal_downloader.vtx"
+  },
+  {
+    "id": "gst_processor",
+    "name": "GST Processor & Consolidator",
+    "repo": "vtx-gst-processor",
+    "bundle": "gst_processor.vtx"
+  }
+]
