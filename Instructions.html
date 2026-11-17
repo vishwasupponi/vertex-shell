@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex — Application User Guide & Instructions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --bg-card: rgba(18, 18, 20, 0.88);
+            --bg-card-hover: rgba(26, 26, 32, 0.96);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --border-highlight: rgba(173, 202, 255, 0.55);
+            
+            --text-primary: #f5f6f9;
+            --text-secondary: #9da3b4;
+            --text-muted: #6b7280;
+
+            --accent-blue: rgb(173, 202, 255);
+            --accent-pink: rgb(255, 189, 236);
+            
+            --gradient-accent: linear-gradient(120deg, rgb(173, 202, 255), rgb(255, 189, 236));
+            --gradient-author: linear-gradient(120deg, rgb(173, 202, 255), rgb(255, 189, 236));
+            --gradient-vertex: linear-gradient(120deg, rgb(173, 202, 255), rgb(255, 189, 236));
+            
+            --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+            --glow-primary: rgba(173, 202, 255, 0.25);
+            --glow-secondary: rgba(255, 189, 236, 0.35);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Lexend', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(173, 202, 255, 0.09) 0%, transparent 45%),
+                radial-gradient(circle at 85% 25%, rgba(255, 189, 236, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(173, 202, 255, 0.06) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.65;
+            padding: 60px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 950px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 45px;
+            position: relative;
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(173, 202, 255, 0.08);
+            border: 1px solid rgba(173, 202, 255, 0.30);
+            color: var(--accent-blue);
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+            box-shadow: 0 0 15px rgba(173, 202, 255, 0.15);
+        }
+
+        .main-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            line-height: 1.15;
+        }
+
+        .main-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .nav-dock {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 35px 0 50px 0;
+            padding: 8px;
+            background: rgba(18, 18, 22, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-full);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-pill {
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 9px 20px;
+            border-radius: var(--radius-full);
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-pill:hover {
+            color: #ffffff;
+            background: rgba(173, 202, 255, 0.14);
+            border-color: rgba(173, 202, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px var(--glow-primary);
+        }
+
+        .module-card {
+            background: var(--bg-card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 38px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .module-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-3px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 25px rgba(173, 202, 255, 0.12);
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .card-icon {
+            width: 52px;
+            height: 52px;
+            background: rgba(173, 202, 255, 0.1);
+            border: 1px solid rgba(173, 202, 255, 0.30);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 0 16px rgba(173, 202, 255, 0.12);
+        }
+
+        .card-title {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: var(--radius-full);
+            background: rgba(173, 202, 255, 0.12);
+            color: var(--accent-blue);
+            border: 1px solid rgba(173, 202, 255, 0.30);
+        }
+
+        .tag-mint { background: rgba(255, 189, 236, 0.12); color: var(--accent-pink); border: 1px solid rgba(255, 189, 236, 0.30); }
+        .tag-purple { background: rgba(255, 189, 236, 0.12); color: var(--accent-pink); border: 1px solid rgba(255, 189, 236, 0.30); }
+        .tag-ice { background: rgba(173, 202, 255, 0.12); color: var(--accent-blue); border: 1px solid rgba(173, 202, 255, 0.30); }
+
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .step-item {
+            position: relative;
+            padding-left: 52px;
+            margin-bottom: 24px;
+        }
+
+        .step-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-item::before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 34px;
+            height: 34px;
+            background: rgba(173, 202, 255, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(173, 202, 255, 0.35);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.92rem;
+            box-shadow: 0 0 10px rgba(173, 202, 255, 0.12);
+        }
+
+        .step-title {
+            font-size: 1.08rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .step-desc {
+            color: var(--text-secondary);
+            font-size: 0.96rem;
+            line-height: 1.6;
+        }
+
+        .step-desc b {
+            color: var(--text-primary);
+        }
+
+        .step-desc code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            margin-top: 22px;
+        }
+
+        .feature-box {
+            background: rgba(10, 10, 14, 0.65);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .feature-box:hover {
+            border-color: rgba(173, 202, 255, 0.35);
+            background: rgba(18, 18, 24, 0.85);
+            transform: translateY(-2px);
+        }
+
+        .feature-box h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-box p {
+            font-size: 0.90rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .contact-section {
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            padding: 32px 24px;
+            background: rgba(18, 18, 22, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(12px);
+        }
+
+        .contact-text {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            background: linear-gradient(120deg, rgb(173, 202, 255), rgb(255, 189, 236));
+            color: #0b0c10;
+            font-weight: 700;
+            font-size: 0.96rem;
+            padding: 12px 30px;
+            border-radius: var(--radius-full);
+            box-shadow: 0 4px 20px rgba(173, 202, 255, 0.35);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 30px rgba(255, 189, 236, 0.55), 0 0 20px rgba(173, 202, 255, 0.45);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 70px;
+            padding-top: 35px;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .author-glow {
+            background: var(--gradient-author);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .vertex-glow {
+            background: var(--gradient-vertex);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <div class="hero-pill">⚡ Vertex Operations Manual</div>
+        <h1 class="main-title">User Guide & Instructions</h1>
+        <p class="main-subtitle">A simple, step-by-step guide to help you manage your Vertex desktop environment and productivity tools.</p>
+        
+        <!-- QUICK NAVIGATION -->
+        <nav class="nav-dock">
+            <a href="#setup" class="nav-pill">🚀 Quick Setup</a>
+            <a href="#module-manager" class="nav-pill">🧩 Module Manager</a>
+            <a href="#customization" class="nav-pill">🎨 Customization & Logs</a>
+            <a href="#security-privacy" class="nav-pill">🔒 Privacy & Security</a>
+        </nav>
+    </header>
+
+    <!-- 1. QUICK SETUP & GETTING STARTED -->
+    <section id="setup" class="module-card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon">🚀</div>
+                <div>
+                    <h2 class="card-title">Quick Setup & Launch</h2>
+                    <div style="font-size: 0.90rem; color: var(--text-secondary);">Getting started with Vertex on your computer</div>
+                </div>
+            </div>
+            <span class="card-tag tag-mint">Portable & Fast</span>
+        </div>
+
+        <ul class="step-list">
+            <li class="step-item">
+                <div class="step-title">Keep Application Files Together</div>
+                <div class="step-desc">Ensure that <b><code>Vertex.exe</code></b> and the <b><code>Main/</code></b> folder remain in the exact same directory. Do not separate or move them into different folders.</div>
+            </li>
+            <li class="step-item">
+                <div class="step-title">Launch Vertex</div>
+                <div class="step-desc">Simply double-click <b><code>Vertex.exe</code></b> to start the application. Vertex is fully portable—no complex installation wizard or background services required.</div>
+            </li>
+            <li class="step-item">
+                <div class="step-title">Install Tools on Demand</div>
+                <div class="step-desc">Vertex ships with a clean, lightweight baseline. Navigate to <b>Settings → Module Manager</b> and switch to the <b>Cloud Store</b> to install the exact tools you need in one click.</div>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 2. MODULE MANAGER & CLOUD STORE -->
+    <section id="module-manager" class="module-card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon">🧩</div>
+                <div>
+                    <h2 class="card-title">Module Manager & Cloud Store</h2>
+                    <div style="font-size: 0.90rem; color: var(--text-secondary);">Manage installed tools, cloud updates, and local packages</div>
+                </div>
+            </div>
+            <span class="card-tag tag-purple">Extensible</span>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-box">
+                <h4>📥 1-Click Cloud Store</h4>
+                <p>Switch to the <b>"Cloud Store"</b> tab in Module Manager to browse official tools and install them directly in one click.</p>
+            </div>
+            <div class="feature-box">
+                <h4>🔍 Catalog Filters & Search</h4>
+                <p>Filter addons by Category and Author, sort by name or release date, and search through full descriptions in real time.</p>
+            </div>
+            <div class="feature-box">
+                <h4>📖 In-App Documentation</h4>
+                <p>Click any module card in the catalog to view its full documentation, feature set, and usage guide before installing.</p>
+            </div>
+            <div class="feature-box">
+                <h4>📦 Local .vtx Installation</h4>
+                <p>Install offline <code>.vtx</code> packages by clicking <b>"Install Local File"</b> and picking the package from your computer.</p>
+            </div>
+            <div class="feature-box">
+                <h4>⚡ Smart Update Alerts</h4>
+                <p>When a newer version of an installed module is released, an <b>"⚡ Update Addon"</b> button appears automatically.</p>
+            </div>
+            <div class="feature-box">
+                <h4>🗑️ Clean Uninstall</h4>
+                <p>Uninstall tools you no longer need with a single click. Removed packages leave zero orphan files behind.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. APP CUSTOMISATION & LOGS -->
+    <section id="customization" class="module-card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon">🎨</div>
+                <div>
+                    <h2 class="card-title">App Customization & Real-Time Logs</h2>
+                    <div style="font-size: 0.90rem; color: var(--text-secondary);">Personalize your visual experience and monitor app operations</div>
+                </div>
+            </div>
+            <span class="card-tag tag-ice">Personalization</span>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-box">
+                <h4>🎨 Curated Color Palettes</h4>
+                <p>Head to <b>Settings</b> to choose from 7 curated color palettes (Monochrome Black, Teal & Cyan, Royal Purple, Emerald Green, and more).</p>
+            </div>
+            <div class="feature-box">
+                <h4>☀️ Light & Dark Appearance</h4>
+                <p>Toggle seamlessly between Dark Mode and Light Mode with high-contrast text and border rendering across all views.</p>
+            </div>
+            <div class="feature-box">
+                <h4>📜 Live Activity Log Window</h4>
+                <p>Click <b>"Open Logs"</b> in Settings to open an instant PowerShell terminal streaming real-time activity and diagnostics.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SECURITY & DATA PRIVACY -->
+    <section id="security-privacy" class="module-card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon">🔒</div>
+                <div>
+                    <h2 class="card-title">Security & Data Privacy</h2>
+                    <div style="font-size: 0.90rem; color: var(--text-secondary);">Your data belongs entirely to you</div>
+                </div>
+            </div>
+            <span class="card-tag tag-mint">Privacy First</span>
+        </div>
+
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem;">
+            Vertex does <b>not collect, track, or retain any personal data or files</b>. The software is designed to operate completely offline, except for features that inherently require network access (such as Cloud Store downloads or GSTR Portal retrieval).
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-box">
+                <h4>🛡️ 100% Local Processing</h4>
+                <p>Document parsing, spreadsheet consolidation, and local OCR execute entirely on your machine with <b>zero data sent over the network</b>.</p>
+            </div>
+            <div class="feature-box">
+                <h4>🚫 Zero Analytics & Telemetry</h4>
+                <p>Vertex contains zero usage tracking, zero analytics beacons, zero call-home pings, and zero third-party telemetry scripts.</p>
+            </div>
+            <div class="feature-box">
+                <h4>📁 Portable Local Storage</h4>
+                <p>All configuration settings and installed plugins are stored <b>strictly within the application folder</b> (inside <code>UserData/</code>).</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <div class="contact-section">
+        <p class="contact-text">Feel free to reach out if you have any questions, need to report a bug, or would like to suggest a new module for Vertex.</p>
+        <a href="https://vishwasupponi.blogspot.com/links" target="_blank" rel="noopener noreferrer" class="contact-btn">
+            <span>Contact Author</span> ↗
+        </a>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>© 2026 <span class="author-glow">Vishwas Upponi</span> — <span class="vertex-glow">Vertex</span>. Released under GNU AGPL-3.0.</p>
+    </footer>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<div class="home-page-container">
+  <!-- Top Header Section (Naturally sized & responsive) -->
+  <div class="home-header">
+    <h1 class="home-title">VERTEX</h1>
+    <p class="home-subtitle">
+      Welcome to Vertex, the central hub for all the tools and applications I’ve built and continue to develop. Feel free to look around and discover what works best for you.
+    </p>
+  </div>
+
+  <!-- Middle Browser Card -->
+  <div class="original-card home-web-card">
+    <div class="web-card-actions">
+      <button class="btn-pill btn-pill-secondary btn-compact" onclick="reloadWebsite()">
+        🔄 Refresh
+      </button>
+      <button class="btn-pill btn-pill-secondary btn-compact" onclick="openExternalUrl('https://vishwasupponi.blogspot.com/')">
+        Open in Browser
+      </button>
+    </div>
+    <div class="web-frame-wrapper">
+      <!-- Instant Top Progress Indicator -->
+      <div id="web-loading-bar" class="web-loading-bar"></div>
+      <iframe
+        id="web-preview-frame"
+        src="http://127.0.0.1:48123/"
+        style="width: 100%; height: 100%; border: none; display: block; background: var(--bg-card);"
+        allow="clipboard-read; clipboard-write; fullscreen"
+        onload="onFrameLoaded()"
+      ></iframe>
+    </div>
+  </div>
+
+  <!-- Bottom Connect with Me Box (Pinned at bottom) -->
+  <div class="original-card home-social-card">
+    <h2 class="social-title">Connect with Me</h2>
+    <div class="social-buttons-row">
+      <button class="brand-glow-btn website" onclick="openExternalUrl('https://vishwasupponi.blogspot.com/')">🌐 Website</button>
+      <button class="brand-glow-btn linkedin" onclick="openExternalUrl('https://www.linkedin.com/in/vishwasupponi')">💼 LinkedIn</button>
+      <button class="brand-glow-btn youtube" onclick="openExternalUrl('https://www.youtube.com/vishwasupponi')">📺 YouTube</button>
+      <button class="brand-glow-btn twitter" onclick="openExternalUrl('https://x.com/vishwasupponi')">🐦 Twitter / X</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let isFirstLoad = true;
+
+function startLoadingProgress() {
+  const bar = document.getElementById('web-loading-bar');
+  if (!bar) return;
+  bar.style.opacity = '1';
+  bar.style.width = '25%';
+  setTimeout(() => { if (bar.style.opacity === '1') bar.style.width = '75%'; }, 150);
+}
+
+function onFrameLoaded() {
+  const bar = document.getElementById('web-loading-bar');
+  if (!bar) return;
+  bar.style.width = '100%';
+  setTimeout(() => {
+    bar.style.opacity = '0';
+    setTimeout(() => { bar.style.width = '0%'; }, 300);
+  }, 200);
+
+  // Hook into internal link clicks for instant visual feedback
+  const frame = document.getElementById('web-preview-frame');
+  try {
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.addEventListener('beforeunload', () => {
+        startLoadingProgress();
+      });
+      frame.contentDocument.addEventListener('click', (e) => {
+        const a = e.target.closest('a');
+        if (a && a.href && !a.href.startsWith('javascript:')) {
+          startLoadingProgress();
+        }
+      });
+    }
+  } catch(e) {}
+}
+
+function reloadWebsite() {
+  startLoadingProgress();
+  const frame = document.getElementById('web-preview-frame');
+  if (frame) {
+    frame.src = 'http://127.0.0.1:48123/?t=' + Date.now();
+  }
+}
+
+function openExternalUrl(url) {
+  if (window.pywebview && window.pywebview.api) {
+    window.pywebview.api.open_browser_url(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// Automatic launch loader - ensures proxy cookie resolution and loads automatically on launch
+function autoLoadHomeWebsite() {
+  startLoadingProgress();
+  setTimeout(() => {
+    const frame = document.getElementById('web-preview-frame');
+    if (frame) {
+      frame.src = 'http://127.0.0.1:48123/?t=' + Date.now();
+    }
+  }, 900);
+}
+
+autoLoadHomeWebsite();
+</script>

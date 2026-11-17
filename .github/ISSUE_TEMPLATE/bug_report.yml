@@ -1,0 +1,86 @@
+name: "Bug Report"
+description: File a structured bug report to help improve the Vertex Application
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please ensure that you do **not** include any sensitive financial data, passwords, or personal credentials in your report.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the Vertex Application does this issue affect?
+      options:
+        - "Vertex Shell (Main Host Frame / Navigation / Settings)"
+        - "Bank Statement Converter (vtx-bank-statement-converter)"
+        - "Excel Consolidator (vtx-excel-consolidator)"
+        - "GSTR Downloader (vtx-gstr-downloader)"
+        - "GST Processor & Consolidator (vtx-gst-processor)"
+        - "Module Manager / .vtx Installation"
+        - "Other / General"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "e.g., When I click 'Select Statements' and choose a PDF file, the file list displays an error..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: What steps led to the issue?
+      placeholder: |
+        1. Open Vertex Shell
+        2. Navigate to '...'
+        3. Click on '...'
+        4. Observe the issue
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+      placeholder: "e.g., The transaction rows should be parsed into the table."
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Windows OS version and build.
+      placeholder: "e.g., Windows 11 Pro 64-bit (Build 22631)"
+    validations:
+      required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: Vertex Version
+      description: The version of Vertex you are running.
+      placeholder: "e.g., 1.0.0"
+      value: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Paste relevant excerpt from `UserData/app_debug.log`. Please redact any account numbers or private filenames.
+      render: text
+      placeholder: "[Paste log excerpt here]"
+  - type: checkboxes
+    id: privacy_checklist
+    attributes:
+      label: Privacy & Data Safety Verification
+      description: Please verify the following before submitting:
+      options:
+        - label: "I have verified that no sensitive financial data, passwords, or personal account numbers are included in this report or in any attached screenshots/logs."
+          required: true
+        - label: "I have checked existing issues to verify this bug has not already been reported."
+          required: false

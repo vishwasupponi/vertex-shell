@@ -1,0 +1,151 @@
+<div class="settings-page-container">
+  <h1 class="settings-page-title">Settings</h1>
+
+  <!-- Section 1: Appearance -->
+  <div class="settings-section-header">Appearance</div>
+  <div class="original-card settings-card">
+    <div class="settings-row">
+      <div class="settings-info">
+        <h3 class="settings-item-title">App Theme</h3>
+        <p class="settings-item-desc">
+          Choose your color theme palette and toggle between Light and Dark appearance modes.
+        </p>
+      </div>
+      <div class="settings-controls">
+        <select id="palette-selector" class="settings-select" onchange="onPaletteSelected(this.value)">
+          <option value="Monochrome Black">Monochrome Black</option>
+          <option value="Teal & Cyan (Original)">Teal & Cyan (Original)</option>
+          <option value="Royal Purple">Royal Purple</option>
+          <option value="Emerald Green">Emerald Green</option>
+          <option value="Sunset Orange">Sunset Orange</option>
+          <option value="Sakura Pink">Sakura Pink</option>
+          <option value="Classic Blue">Classic Blue</option>
+          <option value="Random on Launch">Random on Launch</option>
+        </select>
+        <button id="appearance-mode-btn" class="settings-btn-mode" onclick="toggleMode()">
+          ☀ Light Mode
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Modules -->
+  <div class="settings-section-header">Modules</div>
+  <div class="original-card settings-card">
+    <div class="settings-row">
+      <div class="settings-info">
+        <h3 class="settings-item-title">Module Manager</h3>
+        <p class="settings-item-desc">
+          Enable, disable, or manage installed add-on feature modules.
+        </p>
+      </div>
+      <div class="settings-controls">
+        <button class="settings-btn-action" onclick="navigateToPage('module_manager')">
+          Open Manager  →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: System Logs -->
+  <div class="settings-section-header">Logs</div>
+  <div class="original-card settings-card">
+    <div class="settings-row">
+      <div class="settings-info">
+        <h3 class="settings-item-title">Application Log Window</h3>
+        <p class="settings-item-desc">
+          Launch an on-demand live terminal window streaming debug logs.
+        </p>
+      </div>
+      <div class="settings-controls">
+        <button id="btn-log-launcher" class="settings-btn-action" onclick="launchLogWindow()">
+          📋 Open Log Window
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function initSettingsUI() {
+  const root = document.documentElement;
+  const currentMode = root.getAttribute('data-mode') || 'dark';
+  const savedPalette = root.getAttribute('data-saved-palette') || root.getAttribute('data-palette') || 'Monochrome Black';
+
+  const modeBtn = document.getElementById('appearance-mode-btn');
+  if (modeBtn) {
+    modeBtn.innerText = (currentMode === 'dark') ? '☀ Light Mode' : '🌙 Dark Mode';
+  }
+
+  const paletteSelect = document.getElementById('palette-selector');
+  if (paletteSelect) {
+    paletteSelect.value = savedPalette;
+  }
+}
+
+function onPaletteSelected(palette) {
+  const root = document.documentElement;
+  const mode = root.getAttribute('data-mode') || 'dark';
+  
+  root.setAttribute('data-saved-palette', palette);
+
+  if (palette === 'Random on Launch') {
+    const list = [
+      'Monochrome Black',
+      'Teal & Cyan (Original)',
+      'Royal Purple',
+      'Emerald Green',
+      'Sunset Orange',
+      'Sakura Pink',
+      'Classic Blue'
+    ];
+    const pick = list[Math.floor(Math.random() * list.length)];
+    root.setAttribute('data-palette', pick);
+  } else {
+    root.setAttribute('data-palette', palette);
+  }
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.save_theme) {
+    window.pywebview.api.save_theme(palette, mode);
+  }
+}
+
+function toggleMode() {
+  const root = document.documentElement;
+  const currentMode = root.getAttribute('data-mode') || 'dark';
+  const newMode = (currentMode === 'dark') ? 'light' : 'dark';
+  const palette = root.getAttribute('data-saved-palette') || 'Monochrome Black';
+
+  root.setAttribute('data-mode', newMode);
+  const modeBtn = document.getElementById('appearance-mode-btn');
+  if (modeBtn) {
+    modeBtn.innerText = (newMode === 'dark') ? '☀ Light Mode' : '🌙 Dark Mode';
+  }
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.save_theme) {
+    window.pywebview.api.save_theme(palette, newMode);
+  }
+}
+
+async function launchLogWindow() {
+  const btn = document.getElementById('btn-log-launcher');
+  if (!btn) return;
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.open_log_window) {
+    const res = await window.pywebview.api.open_log_window();
+    if (res === 'OPENED') {
+      btn.innerText = 'Opened!';
+      setTimeout(() => { btn.innerText = '📋 Open Log Window'; }, 2500);
+    } else if (res === 'ALREADY_OPEN') {
+      btn.innerText = 'Already Open ✓';
+      setTimeout(() => { btn.innerText = '📋 Open Log Window'; }, 2000);
+    } else {
+      btn.innerText = 'Error';
+      setTimeout(() => { btn.innerText = '📋 Open Log Window'; }, 3000);
+    }
+  }
+}
+
+// Initialize on mount
+initSettingsUI();
+</script>

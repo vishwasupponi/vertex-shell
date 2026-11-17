@@ -1,0 +1,247 @@
+<div class="notif-page-container">
+  <!-- Header Row -->
+  <div class="notif-header-row">
+    <h1 class="notif-page-title">🔔  Notifications & Updates</h1>
+    <div class="notif-header-actions">
+      <button class="notif-btn-secondary" onclick="markAllRead()">✓ Mark All Read</button>
+      <button id="btn-notif-refresh" class="notif-btn-primary" onclick="refreshNotifFeed()">🔄 Refresh Feed</button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="notif-filter-bar">
+    <div class="notif-search-wrapper">
+      <input
+        type="text"
+        id="notif-search-input"
+        class="notif-search-input"
+        placeholder="🔍 Search update notes & announcements..."
+        oninput="onSearchChanged()"
+      />
+    </div>
+    <div class="notif-segmented-tabs">
+      <button class="seg-tab active" data-cat="ALL" onclick="onCategoryTabClick('ALL')">ALL</button>
+      <button class="seg-tab" data-cat="APP_UPDATE" onclick="onCategoryTabClick('APP_UPDATE')">🚀 APP UPDATES</button>
+      <button class="seg-tab" data-cat="MODULE" onclick="onCategoryTabClick('MODULE')">🧩 ADDONS</button>
+      <button class="seg-tab" data-cat="ANNOUNCEMENT" onclick="onCategoryTabClick('ANNOUNCEMENT')">📣 ANNOUNCEMENTS</button>
+    </div>
+  </div>
+
+  <!-- Notifications Cards Container -->
+  <div id="notif-cards-container" class="notif-cards-container">
+    <div class="notif-loading-state">
+      <div class="spinner-pulse"></div>
+      <div class="notif-loading-text">Fetching latest updates & notifications...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentNotifCategory = 'ALL';
+var currentSearchQuery = '';
+
+var BADGE_CONFIG = {
+  'APP_UPDATE': { text: '🚀  APP UPDATE', badgeClass: 'badge-red' },
+  'MODULE_RELEASE': { text: '🧩  NEW ADDON', badgeClass: 'badge-teal' },
+  'MODULE_UPDATE': { text: '⚡  ADDON UPDATE', badgeClass: 'badge-purple' },
+  'ANNOUNCEMENT': { text: '📣  ANNOUNCEMENT', badgeClass: 'badge-blue' }
+};
+
+async function renderNotifications() {
+  const container = document.getElementById('notif-cards-container');
+  if (!container) return;
+
+  // 1. Check for Vertex Application Releases
+  let updateCardHtml = '';
+  let updateInfo = window.appUpdateInfo;
+  if (!updateInfo && window.pywebview && window.pywebview.api && window.pywebview.api.check_application_updates) {
+    try {
+      updateInfo = await window.pywebview.api.check_application_updates();
+      if (updateInfo && updateInfo.has_update) window.appUpdateInfo = updateInfo;
+    } catch(e) {}
+  }
+
+  if (updateInfo && updateInfo.has_update && (currentNotifCategory === 'ALL' || currentNotifCategory === 'APP_UPDATE')) {
+    const isBeta = updateInfo.channel === 'beta';
+    const badgeText = isBeta ? '🚀  VERTEX BETA PREVIEW' : '🚀  OFFICIAL STABLE RELEASE';
+    const badgeClass = isBeta ? 'badge-purple' : 'badge-red';
+    const notesHtml = updateInfo.release_notes ? `<p class="notif-card-msg" style="margin-top:8px;">${escapeHtml(updateInfo.release_notes)}</p>` : '';
+    const dlUrl = updateInfo.download_url || updateInfo.release_url;
+
+    updateCardHtml = `
+      <div class="original-card notif-card unread" style="border: 1px solid var(--accent); background: linear-gradient(145deg, var(--bg-card) 0%, rgba(56, 189, 248, 0.08) 100%); margin-bottom: 14px;">
+        <div class="notif-card-meta">
+          <span class="notif-badge ${badgeClass}">${badgeText}</span>
+          <span class="notif-date unread">🟢 AVAILABLE NOW  •  v${escapeHtml(updateInfo.latest_version)}</span>
+        </div>
+        <h3 class="notif-card-title">${escapeHtml(updateInfo.release_title || `Vertex Application v${updateInfo.latest_version}`)}</h3>
+        <p class="notif-card-msg" style="margin-top:6px; color: var(--text-primary); font-weight: 500;">
+          Installed: <span style="color:var(--text-muted);">v${escapeHtml(updateInfo.current_version)}</span>  ➔  New Version: <span style="color:#10B981; font-weight:700;">v${escapeHtml(updateInfo.latest_version)}</span>
+        </p>
+        ${notesHtml}
+        <div class="notif-card-actions" style="margin-top: 14px;">
+          ${dlUrl ? `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${escapeHtml(dlUrl)}')">📥 Download Vertex Update (.zip)</button>` : ''}
+          <button class="btn-pill btn-pill-secondary btn-compact" onclick="openExternalUrl('${escapeHtml(updateInfo.release_url)}')">🔗 View on GitHub</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.get_notifications) {
+    try {
+      const items = await window.pywebview.api.get_notifications(currentNotifCategory, currentSearchQuery);
+      if (!items || items.length === 0) {
+        if (updateCardHtml) {
+          container.innerHTML = updateCardHtml;
+        } else {
+          container.innerHTML = `
+            <div class="notif-empty-state">
+              <div class="empty-emoji">🎉</div>
+              <div class="empty-title">All caught up!</div>
+              <div class="empty-desc">No new notifications or announcements.</div>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      let html = updateCardHtml;
+      items.forEach(notif => {
+        const ntype = notif.type || 'ANNOUNCEMENT';
+        const isRead = notif.is_read || false;
+        const badge = BADGE_CONFIG[ntype] || BADGE_CONFIG['ANNOUNCEMENT'];
+        const dateText = isRead ? notif.date : `🟢 NEW  •  ${notif.date}`;
+
+        let actionBtnHtml = '';
+        if (notif.action_type === 'DOWNLOAD_APP' && notif.action_value) {
+          actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${notif.action_value}')">📥 Download App Update</button>`;
+        } else if (notif.action_type === 'INSTALL_MODULE') {
+          actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="navigateToPage('module_manager')">🧩 Open Module Manager</button>`;
+        } else if (notif.action_type === 'OPEN_URL' && notif.action_value) {
+          actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${notif.action_value}')">🔗 Open Details Link</button>`;
+        }
+
+        if (!isRead) {
+          actionBtnHtml += `<button class="btn-pill btn-pill-secondary btn-compact" onclick="markOneRead('${notif.id}')">✓ Mark Read</button>`;
+        }
+        actionBtnHtml += `<button class="btn-pill btn-notif-dismiss btn-compact" onclick="dismissOne('${notif.id}')">Dismiss</button>`;
+
+        html += `
+          <div class="original-card notif-card ${isRead ? 'read' : 'unread'}">
+            <div class="notif-card-meta">
+              <span class="notif-badge ${badge.badgeClass}">${badge.text}</span>
+              <span class="notif-date ${isRead ? 'read' : 'unread'}">${dateText}</span>
+            </div>
+            <h3 class="notif-card-title">${escapeHtml(notif.title || 'Untitled')}</h3>
+            <p class="notif-card-msg">${escapeHtml(notif.message || '')}</p>
+            <div class="notif-card-actions">
+              ${actionBtnHtml}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    } catch(e) {
+      container.innerHTML = `<div class="notif-empty-state"><div class="empty-desc">Error fetching notifications: ${e}</div></div>`;
+    }
+  }
+}
+
+function onSearchChanged() {
+  const input = document.getElementById('notif-search-input');
+  currentSearchQuery = input ? input.value.trim() : '';
+  renderNotifications();
+}
+
+function onCategoryTabClick(cat) {
+  currentNotifCategory = cat;
+  document.querySelectorAll('.seg-tab').forEach(tab => {
+    if (tab.getAttribute('data-cat') === cat) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+  renderNotifications();
+}
+
+async function markAllRead() {
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.mark_all_notifications_read) {
+    await window.pywebview.api.mark_all_notifications_read();
+    renderNotifications();
+    if (window.updateNotificationsBadge) window.updateNotificationsBadge();
+  }
+}
+
+async function markOneRead(id) {
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.mark_notification_read) {
+    await window.pywebview.api.mark_notification_read(id);
+    renderNotifications();
+    if (window.updateNotificationsBadge) window.updateNotificationsBadge();
+  }
+}
+
+async function dismissOne(id) {
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.dismiss_notification) {
+    await window.pywebview.api.dismiss_notification(id);
+    renderNotifications();
+    if (window.updateNotificationsBadge) window.updateNotificationsBadge();
+  }
+}
+
+function showNotifLoading() {
+  var container = document.getElementById('notif-cards-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="notif-loading-state">
+        <div class="spinner-pulse"></div>
+        <div class="notif-loading-text">Fetching latest updates & notifications...</div>
+      </div>
+    `;
+  }
+}
+
+async function refreshNotifFeed() {
+  var btn = document.getElementById('btn-notif-refresh');
+  if (btn) {
+    btn.innerText = '⏳ Syncing...';
+    btn.disabled = true;
+  }
+  showNotifLoading();
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.refresh_notifications_feed) {
+    try {
+      await window.pywebview.api.refresh_notifications_feed();
+    } catch(e) {}
+  }
+  if (btn) {
+    btn.innerText = '🔄 Refresh Feed';
+    btn.disabled = false;
+  }
+  await renderNotifications();
+}
+
+function openExternalUrl(url) {
+  if (window.pywebview && window.pywebview.api) {
+    window.pywebview.api.open_browser_url(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Every time Notifications window is opened: show spinner, sync feed, and render
+async function initNotifications() {
+  showNotifLoading();
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.refresh_notifications_feed) {
+    try {
+      await window.pywebview.api.refresh_notifications_feed();
+    } catch(e) {}
+  }
+  await renderNotifications();
+}
+
+initNotifications();
+</script>

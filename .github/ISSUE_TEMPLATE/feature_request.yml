@@ -1,0 +1,51 @@
+name: "Feature Request & Proposal"
+description: Suggest an enhancement, new feature, or addon module idea
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement to the Vertex Application!
+  - type: dropdown
+    id: target
+    attributes:
+      label: Proposed For
+      description: Where would this feature live?
+      options:
+        - "Vertex Shell (UI / Theming / Host Architecture)"
+        - "Bank Statement Converter (vtx-bank-statement-converter)"
+        - "Excel Consolidator (vtx-excel-consolidator)"
+        - "GSTR Downloader (vtx-gstr-downloader)"
+        - "GST Processor & Consolidator (vtx-gst-processor)"
+        - "Brand New Addon Module Idea"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a specific workflow problem or limitation?
+      placeholder: "e.g., Currently, when processing files with non-standard date formats..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution or new feature you would like to see.
+      placeholder: "e.g., Add an option to manually configure custom date format patterns..."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+  - type: checkboxes
+    id: alignment
+    attributes:
+      label: Architecture Alignment
+      options:
+        - label: "This feature request aligns with Vertex's strict 100% offline and zero-telemetry architecture."
+          required: true

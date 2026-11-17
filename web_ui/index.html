@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark" data-palette="Monochrome Black">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertex</title>
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+  <div class="app-container">
+    <!-- EXTREME LEFT HOVER TRIGGER FOR AUTO-PEEK -->
+    <div id="sidebar-hover-trigger" class="sidebar-hover-trigger" title="Hover to expand sidebar"></div>
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-separator"></div>
+
+      <!-- Center-Right Edge Collapse Toggle Button (Straddling the separator line) -->
+      <button id="sidebar-collapse-btn" class="sidebar-collapse-btn" onclick="toggleSidebarCollapse(event)" title="Collapse Sidebar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      <!-- 1. Centered Glowing Logo Badge -->
+      <div class="logo-badge-container" onclick="loadPage('home')" title="Dashboard">
+        <div class="logo-badge-text">VERTEX</div>
+      </div>
+
+      <!-- 2. Dynamic Modules Navigation Stack (Synchronized dynamically on launch based on UserData/modules) -->
+      <div class="module-nav-stack" id="module-nav-stack"></div>
+
+      <!-- 3. Spacer row pushes bottom buttons down -->
+      <div class="sidebar-spacer"></div>
+
+      <!-- 4. Static Bottom Buttons & Footer -->
+      <div class="bottom-nav-stack">
+        <button class="nav-btn bottom-btn" data-page="notifications" onclick="loadPage('notifications')" style="position: relative;">
+          <span id="nav-notifications-label">🔔  Notifications</span>
+          <span id="sidebar-update-dot" style="display:none; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width:7px; height:7px; border-radius:50%; background:#10B981; box-shadow:0 0 6px #10B981;"></span>
+        </button>
+        <button class="nav-btn bottom-btn" data-page="settings" onclick="loadPage('settings')">
+          <span>⚙️  Settings</span>
+        </button>
+        <div class="sidebar-footer">
+          <div class="footer-version">v1.0.0</div>
+          <div class="footer-author">© Vishwas Upponi</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RESIZABLE SASH DIVIDER -->
+    <div class="sash-divider" id="sash"></div>
+
+    <!-- MAIN WRAPPER (Persistent Banner + Viewport) -->
+    <div class="main-wrapper" style="flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden;">
+      <!-- Top App Update Announcement Banner -->
+      <div id="app-update-banner" class="app-update-banner" style="display: none;">
+        <div class="update-banner-content">
+          <span class="update-banner-icon">🚀</span>
+          <span id="update-banner-text" class="update-banner-text">Update Available: Vertex Application</span>
+          <span id="update-banner-channel" class="update-channel-badge">Stable</span>
+        </div>
+        <div class="update-banner-actions">
+          <button id="update-banner-view-btn" class="update-banner-btn primary" onclick="onUpdateBannerAction('view')">View Release Notes</button>
+          <button id="update-banner-dl-btn" class="update-banner-btn secondary" onclick="onUpdateBannerAction('download')">Download</button>
+          <button class="update-banner-close" onclick="dismissUpdateBanner()" title="Dismiss">✖</button>
+        </div>
+      </div>
+
+      <!-- MAIN SCROLLABLE VIEWPORT -->
+      <main class="main-viewport" id="viewport" style="flex: 1; height: auto;">
+        <!-- Active View rendered here -->
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

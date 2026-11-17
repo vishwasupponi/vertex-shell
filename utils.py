@@ -1,0 +1,196 @@
+"""
+utils.py - Core cross-module shared utilities for Vertex.
+"""
+import sys
+import os
+
+def is_compiled():
+    """Returns True if the application is running in a packaged or frozen binary state."""
+    return getattr(sys, 'frozen', False)
+
+def get_app_dir():
+    """Returns the base application root directory (stripping Main subfolder in both compiled and source mode)."""
+    if is_compiled():
+        d = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.basename(d).lower() == 'main':
+            return os.path.dirname(d)
+        return d
+    main_app_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.basename(main_app_dir).lower() == 'main':
+        return os.path.dirname(main_app_dir)
+    return main_app_dir
+
+
+def get_user_data_dir():
+    """Returns the persistent UserData folder path, creating it if necessary."""
+    user_data = os.path.join(get_app_dir(), "UserData")
+    os.makedirs(user_data, exist_ok=True)
+    return user_data
+
+def open_instructions_html(module_id=None):
+    """Opens Instructions.html for the specified module (or the main application) in the default browser."""
+    import os, sys, webbrowser
+    app_d = get_app_dir()
+    user_data = get_user_data_dir()
+    target_path = None
+
+    if module_id:
+        clean_id = module_id.strip().lower()
+        repo_alias = {
+            "bank_statement_converter": "vtx-bank-statement-converter",
+            "excel_consolidator": "vtx-excel-consolidator",
+            "gst_downloader": "vtx-gstr-downloader",
+            "gstr_downloader": "vtx-gstr-downloader",
+            "gst_processor": "vtx-gst-processor",
+            "ocr_engine": "vtx-ocr-engine",
+        }.get(clean_id, f"vtx-{clean_id.replace('_', '-')}")
+
+        module_candidates = [
+            # 1. UserData/modules/ (installed production runtime paths)
+            os.path.join(user_data, "modules", f"module_{clean_id}", "Instructions.html"),
+            os.path.join(user_data, "modules", clean_id, "Instructions.html"),
+            os.path.join(user_data, "modules", repo_alias, "Instructions.html"),
+            # 2. Local sibling repo folders (development workspace paths)
+            os.path.join(os.path.dirname(app_d), repo_alias, "Instructions.html"),
+            os.path.join(os.path.dirname(app_d), f"module_{clean_id}", "Instructions.html"),
+            os.path.join(os.path.dirname(app_d), clean_id, "Instructions.html"),
+            # 3. Inside app_d/modules/ or app_d/
+            os.path.join(app_d, "modules", f"module_{clean_id}", "Instructions.html"),
+            os.path.join(app_d, repo_alias, "Instructions.html"),
+        ]
+        for p in module_candidates:
+            if os.path.exists(p):
+                target_path = os.path.abspath(p)
+                break
+
+    # Fall back to main app Instructions.html
+    if not target_path:
+        candidate_paths = [
+            os.path.join(app_d, "Instructions.html"),
+            os.path.join(app_d, "Guides", "Instructions.html"),
+            os.path.join(os.path.dirname(app_d), "Instructions.html"),
+            os.path.join(os.path.dirname(app_d), "Guides", "Instructions.html"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "Instructions.html"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "Guides", "Instructions.html")
+        ]
+        for p in candidate_paths:
+            if os.path.exists(p):
+                target_path = os.path.abspath(p)
+                break
+
+    if not target_path:
+        target_path = os.path.abspath(os.path.join(app_d, 'Instructions.html'))
+
+    if sys.platform == "win32" and os.path.exists(target_path):
+        try:
+            os.startfile(target_path)
+            return
+        except Exception:
+            pass
+    webbrowser.open(f"file:///{target_path.replace('\\', '/')}")
+
+def get_icon_path():
+    """Locates and returns the path to Icon.ico across dev and compiled environments."""
+    icon_filename = "Icon.ico"
+    icon_path = ""
+    if is_compiled():
+        app_dir = get_app_dir()
+        icon_path = os.path.join(app_dir, icon_filename)
+            
+    if not icon_path or not os.path.exists(icon_path):
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), icon_filename)
+        
+    if not os.path.exists(icon_path):
+        icon_path = icon_filename
+        
+    if os.path.exists(icon_path):
+        return icon_path
+    return None
+
+
+def apply_workbook_watermark(wb):
+    """
+    Applies official author metadata to an openpyxl Workbook:
+    Core Document Properties: Creator, LastModifiedBy, Description.
+    """
+    try:
+        wb.properties.creator = "Vishwas Upponi"
+        wb.properties.lastModifiedBy = "Vishwas Upponi"
+        wb.properties.title = "Vertex Data Export"
+        wb.properties.subject = "Author: Vishwas Upponi"
+        wb.properties.description = "Generated by Vertex — Author: Vishwas Upponi"
+        wb.properties.category = "Vertex"
+    except Exception:
+        pass
+
+
+def handle_remove_readonly(func, path, exc_info):
+    """Clear read-only file permissions on Windows and retry file deletion."""
+    import stat
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except Exception:
+        pass
+
+
+def safe_delete_module_dir(module_dir):
+    """
+    Safely deletes a module directory on Windows.
+    Handles locked C-compiled binaries (.pyd / .dll) loaded in memory by renaming
+    the folder to a temporary '.deleted_<timestamp>' name so it immediately disappears
+    from the module registry, and cleans up any remaining files.
+    """
+    if not os.path.exists(module_dir):
+        return True, "Directory already removed"
+
+    import shutil
+    # 1. Try direct rmtree first
+    try:
+        shutil.rmtree(module_dir, onerror=handle_remove_readonly)
+        if not os.path.exists(module_dir):
+            return True, "Successfully deleted module folder"
+    except Exception:
+        pass
+
+    # 2. If direct removal fails (e.g. .pyd file locked in memory by Windows process),
+    # rename directory to .deleted_<timestamp> (Windows allows renaming open/locked DLLs)
+    import time
+    trash_dir = module_dir + f".deleted_{int(time.time())}"
+    try:
+        os.rename(module_dir, trash_dir)
+    except Exception as e:
+        return False, f"Failed to remove or rename module folder: {e}"
+
+    # 3. Attempt to clean up contents of renamed trash folder
+    try:
+        shutil.rmtree(trash_dir, onerror=handle_remove_readonly)
+    except Exception:
+        # Folder is now renamed so it is completely hidden from ModuleLoader & UI.
+        # Startup cleanup will finish purging it on next app launch.
+        pass
+
+    return True, "Module deleted (pending background cleanup on app restart)"
+
+
+def cleanup_pending_deleted_modules(modules_dir):
+    """
+    Scans modules_dir for any temporary .deleted_* directories left over from
+    previous runs and purges them on startup before any .pyd files are loaded.
+    """
+    if not os.path.exists(modules_dir):
+        return
+
+    import shutil
+    try:
+        for item in os.listdir(modules_dir):
+            if ".deleted_" in item or item.endswith(".tmp"):
+                target_path = os.path.join(modules_dir, item)
+                if os.path.isdir(target_path):
+                    try:
+                        shutil.rmtree(target_path, onerror=handle_remove_readonly)
+                    except Exception as e:
+                        print(f"[Cleanup] Stale folder cleanup notice for {item}: {e}")
+    except Exception:
+        pass
+
