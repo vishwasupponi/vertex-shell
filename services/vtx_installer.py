@@ -10,6 +10,11 @@ import zipfile
 import tempfile
 from utils import safe_delete_module_dir
 
+try:
+    from version import __version__ as APP_VERSION
+except Exception:
+    APP_VERSION = "1.0.0"
+
 
 
 def install_vtx_archive(archive_path: str, modules_dir: str) -> tuple[bool, str, str]:
@@ -159,7 +164,7 @@ def fetch_live_cloud_catalog():
 
     # Step 1: Attempt to fetch modules.json from remote raw GitHub
     try:
-        r = requests.get(OFFICIAL_REGISTRY_URL, timeout=5, headers={"User-Agent": "Vertex-Application/1.0.0"})
+        r = requests.get(OFFICIAL_REGISTRY_URL, timeout=5, headers={"User-Agent": f"Vertex-Application/{APP_VERSION}"})
         if r.status_code == 200:
             modules_list = r.json()
     except Exception:
@@ -186,7 +191,7 @@ def fetch_live_cloud_catalog():
         bundle = mod.get("bundle", f"{mod.get('id', 'module')}.vtx")
         manifest_url = f"{RAW_GITHUB_BASE}/{repo}/main/manifest.json"
         try:
-            resp = requests.get(manifest_url, timeout=5, headers={"User-Agent": "Vertex-Application/1.0.0"})
+            resp = requests.get(manifest_url, timeout=5, headers={"User-Agent": f"Vertex-Application/{APP_VERSION}"})
             if resp.status_code == 200:
                 manifest_data = resp.json()
                 version = str(manifest_data.get("version", "1.0.0"))
@@ -251,7 +256,7 @@ def download_module_package(download_url: str, destination_path: str, progress_c
     """
     session = requests.Session()
     session.headers.update({
-        'User-Agent': 'Vertex-Application/1.0.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent': f'Vertex-Application/{APP_VERSION} (Windows NT 10.0; Win64; x64)'
     })
 
     try:

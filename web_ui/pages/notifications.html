@@ -80,7 +80,7 @@ async function renderNotifications() {
         </p>
         ${notesHtml}
         <div class="notif-card-actions" style="margin-top: 14px;">
-          ${dlUrl ? `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${escapeHtml(dlUrl)}')">📥 Download Vertex Update (.zip)</button>` : ''}
+          ${dlUrl ? `<button class="btn-pill btn-pill-primary btn-compact" onclick="promptAppUpdate('${escapeHtml(dlUrl)}', '${escapeHtml(updateInfo.latest_version)}', '${escapeHtml(updateInfo.release_url)}')">🚀 Update Now</button>` : ''}
           <button class="btn-pill btn-pill-secondary btn-compact" onclick="openExternalUrl('${escapeHtml(updateInfo.release_url)}')">🔗 View on GitHub</button>
         </div>
       </div>
@@ -114,7 +114,12 @@ async function renderNotifications() {
 
         let actionBtnHtml = '';
         if (notif.action_type === 'DOWNLOAD_APP' && notif.action_value) {
-          actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${notif.action_value}')">📥 Download App Update</button>`;
+          const actUrl = escapeHtml(notif.action_value);
+          if (notif.action_value.toLowerCase().split('?')[0].endsWith('.zip')) {
+            actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="promptAppUpdate('${actUrl}', '', '${actUrl}')">🚀 Update Now</button>`;
+          } else {
+            actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="openExternalUrl('${actUrl}')">📥 Download App Update</button>`;
+          }
         } else if (notif.action_type === 'INSTALL_MODULE') {
           actionBtnHtml += `<button class="btn-pill btn-pill-primary btn-compact" onclick="navigateToPage('module_manager')">🧩 Open Module Manager</button>`;
         } else if (notif.action_type === 'OPEN_URL' && notif.action_value) {

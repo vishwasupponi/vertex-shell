@@ -43,7 +43,7 @@
           <span>⚙️  Settings</span>
         </button>
         <div class="sidebar-footer">
-          <div class="footer-version">v1.0.0</div>
+          <div id="footer-version" class="footer-version">v1.1.0</div>
           <div class="footer-author">© Vishwas Upponi</div>
         </div>
       </div>
@@ -63,7 +63,7 @@
         </div>
         <div class="update-banner-actions">
           <button id="update-banner-view-btn" class="update-banner-btn primary" onclick="onUpdateBannerAction('view')">View Release Notes</button>
-          <button id="update-banner-dl-btn" class="update-banner-btn secondary" onclick="onUpdateBannerAction('download')">Download</button>
+          <button id="update-banner-dl-btn" class="update-banner-btn secondary" onclick="onUpdateBannerAction('download')">Update Now</button>
           <button class="update-banner-close" onclick="dismissUpdateBanner()" title="Dismiss">✖</button>
         </div>
       </div>
@@ -72,6 +72,21 @@
       <main class="main-viewport" id="viewport" style="flex: 1; height: auto;">
         <!-- Active View rendered here -->
       </main>
+    </div>
+  </div>
+
+  <!-- APP SELF-UPDATE CONFIRMATION MODAL -->
+  <div id="app-update-confirm-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card install-progress-dialog" style="max-width: 460px; padding: 26px 28px; text-align: center;">
+      <h3 class="install-dlg-title" id="app-update-modal-title" style="margin: 0 0 10px 0; font-size: 18px;">🚀 Update Vertex</h3>
+      <p id="app-update-modal-desc" style="font-size: 13.5px; color: var(--text-secondary); margin: 0 0 22px 0; line-height: 1.55;">
+        Clicking <strong>Update &amp; Restart</strong> will close Vertex, download and install the update automatically, and restart the app.<br><br>
+        All your installed modules and settings in <strong>UserData</strong> will be preserved. Please save any ongoing work before continuing. Are you sure you want to proceed?
+      </p>
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <button id="app-update-cancel-btn" class="btn-pill btn-pill-secondary btn-compact" onclick="closeAppUpdateModal()">Cancel</button>
+        <button id="app-update-confirm-btn" class="btn-pill btn-pill-primary btn-compact" onclick="confirmAppUpdate()">Update &amp; Restart</button>
+      </div>
     </div>
   </div>
 

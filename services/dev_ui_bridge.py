@@ -15,6 +15,11 @@ from utils import get_app_dir, get_user_data_dir, open_instructions_html, safe_d
 from services.notifications_engine import get_notifications_engine
 from module_loader import discover_modules
 
+try:
+    from version import __version__ as APP_VERSION
+except Exception:
+    APP_VERSION = "1.0.0"
+
 # ─── SESSION EXTRACTION CACHE ────────────────────────────────────
 _SESSION_EXTRACTION_CACHE = {}
 _SESSION_CACHE_DIR = os.path.join(get_user_data_dir(), "cache", f"session_bank_ext_{os.getpid()}")
@@ -159,7 +164,7 @@ class DevVertexAPI:
             "active_palette": active_palette,
             "palette": active_palette,
             "mode": saved_mode,
-            "version": "1.1.0"
+            "version": APP_VERSION
         }
 
     def save_theme(self, palette_name, mode):
@@ -461,7 +466,7 @@ class DevVertexAPI:
 
         raw_url = f"https://raw.githubusercontent.com/{clean_repo}/main/README.md"
         try:
-            req = urllib.request.Request(raw_url, headers={"User-Agent": "Vertex-Application/1.0.0"})
+            req = urllib.request.Request(raw_url, headers={"User-Agent": f"Vertex-Application/{APP_VERSION}"})
             with urllib.request.urlopen(req, timeout=6) as resp:
                 if resp.status == 200:
                     content = resp.read().decode("utf-8")
@@ -504,10 +509,73 @@ class DevVertexAPI:
         except Exception as e:
             print(f"[UpdateChecker] Error checking application updates: {e}")
             return {
-                "current_version": "1.0.0",
+                "current_version": APP_VERSION,
                 "has_update": False,
-                "latest_version": "1.0.0",
+                "latest_version": APP_VERSION,
                 "error": str(e)
+            }
+
+    def start_app_update(self, download_url: str, target_version: str = "") -> dict:
+        """
+        Copies Vertex.exe to a temporary updater folder in %TEMP%, launches it in --update mode
+        with the Splash Screen UI, and shuts down Vertex so files can be updated cleanly.
+        """
+        global _DEV_WINDOW
+        import tempfile
+
+        clean_url = str(download_url or "").strip()
+        if not clean_url or not clean_url.lower().split("?")[0].endswith(".zip"):
+            return {
+                "started": False,
+                "fallback_url": clean_url,
+                "reason": "Direct ZIP update asset URL is unavailable."
+            }
+
+        app_root = get_app_dir()
+        launcher_exe = os.path.join(app_root, "Vertex.exe")
+        if sys.platform != "win32" or not os.path.isfile(launcher_exe):
+            return {
+                "started": False,
+                "fallback_url": clean_url,
+                "reason": "Self-updater is available only in the packaged Windows release."
+            }
+
+        try:
+            updater_dir = tempfile.mkdtemp(prefix="VertexUpdater_")
+            updater_exe = os.path.join(updater_dir, "VertexUpdater.exe")
+            shutil.copy2(launcher_exe, updater_exe)
+
+            launcher_cfg = launcher_exe + ".config"
+            if os.path.isfile(launcher_cfg):
+                shutil.copy2(launcher_cfg, updater_exe + ".config")
+
+            print(f"[SelfUpdater] Launching splash updater for v{target_version} from {updater_dir}")
+            sys.stdout.flush()
+
+            subprocess.Popen(
+                [updater_exe, "--update", str(os.getpid()), clean_url, str(target_version or ""), app_root],
+                cwd=updater_dir,
+                close_fds=True
+            )
+
+            def _graceful_exit():
+                time.sleep(0.15)
+                try:
+                    if _DEV_WINDOW:
+                        _DEV_WINDOW.destroy()
+                except Exception:
+                    pass
+                time.sleep(0.5)
+                os._exit(0)
+
+            threading.Thread(target=_graceful_exit, daemon=True).start()
+            return {"started": True}
+        except Exception as e:
+            print(f"[SelfUpdater] Launch error: {e}")
+            return {
+                "started": False,
+                "fallback_url": clean_url,
+                "reason": str(e)
             }
 
     def download_and_install_cloud_module(self, item):

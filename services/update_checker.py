@@ -11,7 +11,11 @@ import urllib.request
 import urllib.error
 from utils import get_user_data_dir
 
-CURRENT_VERSION = "1.0.0"
+try:
+    from version import __version__ as CURRENT_VERSION
+except Exception:
+    CURRENT_VERSION = "1.0.0"
+
 GITHUB_RELEASES_API = "https://api.github.com/repos/vishwasupponi/vertex-shell/releases"
 FALLBACK_VERSION_URL = "https://raw.githubusercontent.com/vishwasupponi/vertex-shell/main/version.json"
 CACHE_TTL_SECONDS = 900  # 15 minutes

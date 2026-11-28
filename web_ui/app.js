@@ -213,6 +213,10 @@ async function initDevApp() {
         document.documentElement.setAttribute('data-palette', currentPalette);
         document.documentElement.setAttribute('data-saved-palette', savedPalette);
         document.documentElement.setAttribute('data-mode', currentMode);
+        if (settings.version) {
+          const footerVer = document.getElementById('footer-version');
+          if (footerVer) footerVer.textContent = `v${settings.version}`;
+        }
       }
     } catch (e) {}
   }
@@ -514,18 +518,100 @@ function dismissUpdateBanner() {
   }
 }
 
+let _pendingAppUpdate = null;
+
+function promptAppUpdate(downloadUrl, latestVersion, releaseUrl) {
+  const cleanDl = (downloadUrl || '').trim();
+  const cleanRel = (releaseUrl || '').trim();
+  _pendingAppUpdate = {
+    downloadUrl: cleanDl,
+    latestVersion: (latestVersion || '').trim(),
+    releaseUrl: cleanRel || cleanDl
+  };
+
+  const modal = document.getElementById('app-update-confirm-modal');
+  const titleEl = document.getElementById('app-update-modal-title');
+  const confirmBtn = document.getElementById('app-update-confirm-btn');
+  const cancelBtn = document.getElementById('app-update-cancel-btn');
+  if (!modal) {
+    confirmAppUpdate();
+    return;
+  }
+
+  if (titleEl) {
+    titleEl.innerText = _pendingAppUpdate.latestVersion
+      ? `🚀 Update to Vertex v${_pendingAppUpdate.latestVersion}`
+      : '🚀 Update Vertex';
+  }
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.innerText = 'Update & Restart';
+  }
+  if (cancelBtn) {
+    cancelBtn.disabled = false;
+  }
+  modal.style.display = 'flex';
+}
+
+function closeAppUpdateModal() {
+  const modal = document.getElementById('app-update-confirm-modal');
+  if (modal) modal.style.display = 'none';
+  _pendingAppUpdate = null;
+}
+
+async function confirmAppUpdate() {
+  if (!_pendingAppUpdate) return;
+  const { downloadUrl, latestVersion, releaseUrl } = _pendingAppUpdate;
+  const confirmBtn = document.getElementById('app-update-confirm-btn');
+  const cancelBtn = document.getElementById('app-update-cancel-btn');
+
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = 'Starting Updater...';
+  }
+  if (cancelBtn) {
+    cancelBtn.disabled = true;
+  }
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.start_app_update) {
+    try {
+      const res = await window.pywebview.api.start_app_update(downloadUrl, latestVersion);
+      if (res && res.started) {
+        return;
+      }
+      const fallback = (res && res.fallback_url) || releaseUrl || downloadUrl;
+      closeAppUpdateModal();
+      if (fallback && window.pywebview.api.open_external_url) {
+        window.pywebview.api.open_external_url(fallback);
+      } else if (fallback) {
+        window.open(fallback, '_blank');
+      }
+      return;
+    } catch (e) {
+      console.error('[SelfUpdater] Error:', e);
+    }
+  }
+
+  closeAppUpdateModal();
+  const target = releaseUrl || downloadUrl;
+  if (target) {
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external_url) {
+      window.pywebview.api.open_external_url(target);
+    } else {
+      window.open(target, '_blank');
+    }
+  }
+}
+
 function onUpdateBannerAction(action) {
   if (!window.appUpdateInfo) return;
   if (action === 'view') {
     loadPage('notifications');
   } else if (action === 'download') {
-    const url = window.appUpdateInfo.download_url || window.appUpdateInfo.release_url;
-    if (url) {
-      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external_url) {
-        window.pywebview.api.open_external_url(url);
-      } else {
-        window.open(url, '_blank');
-      }
-    }
+    promptAppUpdate(
+      window.appUpdateInfo.download_url,
+      window.appUpdateInfo.latest_version,
+      window.appUpdateInfo.release_url
+    );
   }
 }

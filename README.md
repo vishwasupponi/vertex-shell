@@ -1,6 +1,6 @@
 # Vertex Application
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg?style=flat-square)](https://github.com/vishwasupponi/vertex-shell/releases)
+[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg?style=flat-square)](https://github.com/vishwasupponi/vertex-shell/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-red.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-lightgrey.svg?style=flat-square)](https://www.microsoft.com/windows)
 [![UI Engine](https://img.shields.io/badge/UI%20Engine-Microsoft%20Edge%20WebView2-green.svg?style=flat-square)](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
@@ -12,7 +12,7 @@ Vertex is a modular, lightweight, portable, privacy-focused app. By itself, Vert
 Visit my [website](https://vishwasupponi.blogspot.com) for more information.
 
 > [!NOTE]
-> **Internet Usage**: Uses an internet connection to load the developer website embedded on the Home dashboard, and inside Module Manager to browse the store catalog, check for updates, and download modules. All other shell operations run completely offline.
+> **Internet Usage**: Uses an internet connection to load the developer website embedded on the Home dashboard, check for and download application self-updates (including optional Microsoft Edge WebView2 setup on older Windows 10 systems if missing), and inside Module Manager to browse the store catalog, check for updates, and download modules. All other shell operations run completely offline.
 
 ---
 
@@ -39,7 +39,8 @@ Visit my [website](https://vishwasupponi.blogspot.com) for more information.
 - **🛡️ Zero-Telemetry Policy**: Vertex contains zero telemetry, zero analytics trackers, zero usage logging, and zero background call-homes.
 - **🧩 Decoupled Modular Ecosystem**: Tools and parsers are distributed as isolated `.vtx` addon modules. Each addon operates within its own encapsulated namespace and self-contained tree.
 - **🎨 Modern WebView2 Shell**: A desktop interface built on Microsoft Edge WebView2, delivering a responsive, modern user experience with customizable appearance modes and smooth navigation.
-- **📁 Self-Contained Local Storage**: All files, settings, and installed plugins required by Vertex are stored strictly within the application folder itself (inside the `UserData/` directory for plugins). No files or directories are created outside this folder unless you explicitly choose to save exported output files elsewhere.
+- **⚡ 1-Click Automatic Self-Updater**: Update the Vertex application directly from inside the app without manually downloading archives or copying files—your settings and installed modules in `UserData/` remain completely untouched.
+- **📁 Self-Contained Local Storage**: All files, settings, and installed plugins required by Vertex are stored strictly within the application folder itself (inside the `UserData/` directory for plugins). No files or directories are created outside this folder unless you explicitly choose to save exported output files elsewhere *(with one transient exception: during an in-app application update, Vertex briefly creates temporary staging files in Windows' `%TEMP%` directory and automatically deletes them as soon as the update finishes and restarts)*.
 
 ---
 

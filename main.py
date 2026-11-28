@@ -67,6 +67,8 @@ class LineBufferedTee(object):
             try:
                 self.stream.write(data)
                 self.stream.flush()
+            except BrokenPipeError:
+                self.stream = None
             except Exception:
                 pass
 
@@ -79,6 +81,8 @@ class LineBufferedTee(object):
         if self.stream is not None:
             try:
                 self.stream.flush()
+            except BrokenPipeError:
+                self.stream = None
             except Exception:
                 pass
 
@@ -110,6 +114,118 @@ except Exception as e:
 
 import webview
 from services.dev_ui_bridge import DevVertexAPI, set_dev_window, set_proxy_port
+
+
+def _show_win_message(title, message, flags=0x10):
+    """Shows a native Windows message box when running on win32."""
+    if sys.platform != "win32":
+        return 0
+    try:
+        import ctypes
+        return ctypes.windll.user32.MessageBoxW(0, str(message), str(title), flags)
+    except Exception:
+        return 0
+
+
+def _is_webview2_installed():
+    """Checks Windows registry for Microsoft Edge WebView2 Runtime (>= 86.0.622.0)."""
+    if sys.platform != "win32":
+        return True
+    try:
+        import winreg
+        is_x86 = platform.machine().lower() in ("x86", "i386")
+        guids = [
+            "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",  # Evergreen Runtime
+            "{2CD8A007-E189-409D-A2C8-9AF4EF3C72AA}",  # Beta
+            "{0D50BFEC-CD6A-4F9A-964C-C7416E3ACB10}",  # Dev
+            "{65C35B14-6C1D-4122-AC46-7148CC9D6497}",  # Canary
+        ]
+        for guid in guids:
+            for root_key, root_name in ((winreg.HKEY_CURRENT_USER, "HKCU"), (winreg.HKEY_LOCAL_MACHINE, "HKLM")):
+                subpath = rf"SOFTWARE\Microsoft\EdgeUpdate\Clients\{guid}"
+                if not is_x86 and root_name == "HKLM":
+                    subpath = rf"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{guid}"
+                try:
+                    with winreg.OpenKey(root_key, subpath) as key:
+                        ver, _ = winreg.QueryValueEx(key, "pv")
+                        parts = [int(p) for p in str(ver).split(".")[:4] if p.isdigit()]
+                        if parts and tuple(parts) >= (86, 0, 622, 0):
+                            return True
+                except OSError:
+                    pass
+    except Exception as e:
+        print(f"[Vertex Boot] Registry check notice: {e}")
+    return False
+
+
+def ensure_windows_prerequisites():
+    """Verifies .NET Framework 4.6.2+ and Edge WebView2 Runtime on Windows, offering guided install if missing."""
+    if sys.platform != "win32":
+        return True
+
+    # 1. Verify .NET Framework 4.6.2+ (Release >= 394802)
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full") as net_key:
+            release_val, _ = winreg.QueryValueEx(net_key, "Release")
+        if int(release_val) < 394802:
+            msg = (
+                "Vertex requires Microsoft .NET Framework 4.6.2 or later.\n\n"
+                "Please update Windows or install .NET Framework 4.8 and re-open Vertex."
+            )
+            print(f"[Vertex Boot Error] {msg}")
+            _show_win_message("Vertex - Missing Prerequisite", msg, 0x10 | 0x40000)
+            return False
+    except OSError:
+        pass
+
+    # 2. Verify Microsoft Edge WebView2 Runtime
+    if _is_webview2_installed():
+        return True
+
+    print("[Vertex Boot] Microsoft Edge WebView2 Runtime not detected.")
+    setup_candidates = [
+        os.path.join(app_dir, "MicrosoftEdgeWebView2Setup.exe"),
+        os.path.join(root_app_dir, "MicrosoftEdgeWebView2Setup.exe"),
+        os.path.join(root_app_dir, "Main", "MicrosoftEdgeWebView2Setup.exe"),
+    ]
+    setup_exe = next((p for p in setup_candidates if os.path.isfile(p)), None)
+
+    if setup_exe:
+        choice = _show_win_message(
+            "Vertex - WebView2 Runtime Required",
+            "Vertex requires the Microsoft Edge WebView2 Runtime to display its interface.\n\n"
+            "Would you like to run the included Microsoft installer now?",
+            0x04 | 0x30 | 0x40000,  # MB_YESNO | MB_ICONWARNING | MB_TOPMOST
+        )
+        if choice == 6:  # IDYES
+            import subprocess
+            print(f"[Vertex Boot] Launching WebView2 installer: {setup_exe}")
+            try:
+                subprocess.run([setup_exe], check=False)
+            except Exception as e:
+                print(f"[Vertex Boot Error] Failed to run WebView2 installer: {e}")
+            if _is_webview2_installed():
+                print("[Vertex Boot] Microsoft Edge WebView2 Runtime installed successfully.")
+                return True
+            _show_win_message(
+                "Vertex - Installation Incomplete",
+                "Microsoft Edge WebView2 Runtime was not detected after setup.\n\n"
+                "Please ensure you have internet access and finish the WebView2 installation, then relaunch Vertex.",
+                0x10 | 0x40000,
+            )
+        return False
+
+    choice = _show_win_message(
+        "Vertex - WebView2 Runtime Required",
+        "Vertex requires the Microsoft Edge WebView2 Runtime to display its interface.\n\n"
+        "Would you like to open Microsoft's official WebView2 download page now?",
+        0x04 | 0x30 | 0x40000,
+    )
+    if choice == 6:
+        import webbrowser
+        webbrowser.open("https://go.microsoft.com/fwlink/p/?LinkId=2124703")
+    return False
 
 # ----------------- ULTRA-FAST POOLED KEEP-ALIVE PROXY -----------------
 PROXY_PORT = 48123
@@ -166,7 +282,21 @@ def resolve_auth_cookie():
 
 
 class UltraFastProxyHandler(http.server.BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        req_headers = self.headers.get("Access-Control-Request-Headers", "*")
+        self.send_header("Access-Control-Allow-Headers", req_headers)
+        self.end_headers()
+
     def do_GET(self):
+        self._forward_request("GET")
+
+    def do_POST(self):
+        self._forward_request("POST")
+
+    def _forward_request(self, method):
         global _CACHED_COOKIE, _TARGET_DOMAIN
         if not _CACHED_COOKIE and ("xo.je" in _TARGET_DOMAIN or "epizy" in _TARGET_DOMAIN):
             resolve_auth_cookie()
@@ -174,15 +304,32 @@ class UltraFastProxyHandler(http.server.BaseHTTPRequestHandler):
         target_path = self.path if self.path else '/'
         target_url = f"{_TARGET_DOMAIN}{target_path}"
 
+        body = None
+        if method in ("POST", "PUT", "PATCH"):
+            try:
+                content_len = int(self.headers.get("Content-Length", "0") or "0")
+            except ValueError:
+                content_len = 0
+            body = self.rfile.read(content_len) if content_len > 0 else b""
+
+        fwd_headers = {
+            "Origin": _TARGET_DOMAIN,
+            "Referer": f"{_TARGET_DOMAIN}/",
+        }
+        for hdr in ("Content-Type", "Accept", "X-Requested-With"):
+            val = self.headers.get(hdr)
+            if val:
+                fwd_headers[hdr] = val
+
         try:
-            resp = _HTTP_SESSION.get(target_url, timeout=12)
+            resp = _HTTP_SESSION.request(method, target_url, data=body, headers=fwd_headers, timeout=15)
             data = resp.content
             content_type = resp.headers.get("Content-Type", "application/octet-stream")
 
             if b"/aes.js" in data and len(data) < 2000 and ("xo.je" in _TARGET_DOMAIN or "epizy" in _TARGET_DOMAIN):
                 resolve_auth_cookie()
                 retry_url = target_url if "?i=1" in target_url else (target_url + ("&i=1" if "?" in target_url else "?i=1"))
-                resp = _HTTP_SESSION.get(retry_url, timeout=12)
+                resp = _HTTP_SESSION.request(method, retry_url, data=body, headers=fwd_headers, timeout=15)
                 data = resp.content
                 content_type = resp.headers.get("Content-Type", content_type)
 
@@ -196,7 +343,7 @@ class UltraFastProxyHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Cache-Control", "public, max-age=3600")
+            self.send_header("Cache-Control", "public, max-age=3600" if method == "GET" else "no-store")
             self.end_headers()
             self.wfile.write(data)
         except Exception as e:
@@ -228,6 +375,8 @@ def start_proxy_server():
 
 
 def run_app():
+    if not ensure_windows_prerequisites():
+        return
     start_proxy_server()
     ui_index = os.path.join(app_dir, "web_ui", "index.html")
     icon_path = get_icon_path()
@@ -248,34 +397,16 @@ def run_app():
     set_dev_window(window)
 
     def on_loaded():
-        # Enforce window is NOT TopMost
+        # Wait until the Vertex window is actually shown on screen before signaling launcher
         try:
-            if hasattr(window, "native") and window.native:
-                window.native.TopMost = False
-        except Exception as e:
-            print(f"[Window Setup Notice] TopMost error: {e}")
-
-        # Hide console in standalone compiled mode
-        if _is_compiled:
-            try:
-                import ctypes
-                con_hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-                if con_hwnd:
-                    ctypes.windll.user32.ShowWindow(con_hwnd, 0)
-                ctypes.windll.kernel32.FreeConsole()
-            except Exception as e:
-                print(f"[Console Notice] FreeConsole error: {e}")
-
-        # Apply WinForms icon (title bar)
-        if icon_path and os.path.exists(icon_path):
-            try:
-                import clr
-                clr.AddReference("System.Drawing")
-                from System.Drawing import Icon
-                if hasattr(window, "native") and window.native:
-                    window.native.Icon = Icon(icon_path)
-            except Exception as e:
-                print(f"[Window Setup Notice] WinForms Icon error: {e}")
+            window.events.shown.wait(15)
+        except Exception:
+            pass
+        print("[Vertex Ready]", flush=True)
+        if os.environ.get("VERTEX_SPLASH_LAUNCHER") == "1":
+            for s in (sys.stdout, sys.stderr):
+                if hasattr(s, "stream"):
+                    s.stream = None
 
     webview.start(
         on_loaded,
@@ -295,6 +426,29 @@ if __name__ == "__main__":
         ctypes.windll.ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
     except Exception as e:
         print(f"[OLE Init Notice] CoInitializeEx error: {e}")
-    run_app()
+    try:
+        run_app()
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except Exception:
+            pass
+        if sys.platform == "win32" and os.environ.get("VERTEX_SPLASH_LAUNCHER") != "1":
+            has_console = False
+            try:
+                import ctypes
+                has_console = bool(ctypes.windll.kernel32.GetConsoleWindow())
+            except Exception:
+                pass
+            if not has_console:
+                _show_win_message(
+                    "Vertex - Startup Error",
+                    f"Vertex failed to start:\n\n{exc}\n\nSee UserData\\app_debug.log for details.",
+                    0x10 | 0x40000,
+                )
+        sys.exit(1)
 
 
